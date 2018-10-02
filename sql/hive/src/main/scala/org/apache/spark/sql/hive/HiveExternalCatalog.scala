@@ -51,6 +51,7 @@ import org.apache.spark.sql.types.{DataType, StructType}
 /**
  * A persistent implementation of the system catalog using Hive.
  * All public methods must be synchronized for thread-safety.
+  * 在HiveSessionCatalog中被调用，用来构造对应的client
  */
 private[spark] class HiveExternalCatalog(conf: SparkConf, hadoopConf: Configuration)
   extends ExternalCatalog with Logging {
