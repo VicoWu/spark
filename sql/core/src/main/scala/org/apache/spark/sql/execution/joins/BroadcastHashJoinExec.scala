@@ -34,6 +34,8 @@ import org.apache.spark.sql.types.LongType
  * being constructed, a Spark job is asynchronously started to calculate the values for the
  * broadcast relation.  This data is then placed in a Spark broadcast variable.  The streamed
  * relation is not shuffled.
+ * 这里有一个stackoverflow 的问题，https://stackoverflow.com/questions/36290486/spark-job-restarted-after-showing-all-jobs-completed-and-then-fails-timeoutexce
+ * BroadcastHashJoin在shuffle的过程中发生了timeout，因此将其换成ShuffleHashJoin以后问题解决
  */
 case class BroadcastHashJoinExec(
     leftKeys: Seq[Expression],
