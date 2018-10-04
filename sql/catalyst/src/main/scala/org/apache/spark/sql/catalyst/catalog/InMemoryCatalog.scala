@@ -49,16 +49,19 @@ class InMemoryCatalog(
 
   import CatalogTypes.TablePartitionSpec
 
+
+  // 内存中用来代表table的对象
   private class TableDesc(var table: CatalogTable) {
     val partitions = new mutable.HashMap[TablePartitionSpec, CatalogTablePartition]
   }
 
+  // 内存中用来代表数据库的类
   private class DatabaseDesc(var db: CatalogDatabase) {
     val tables = new mutable.HashMap[String, TableDesc]
     val functions = new mutable.HashMap[String, CatalogFunction]
   }
 
-  // Database name -> description
+  // 数据库和数据库的具体信息之间的对应关系
   private val catalog = new scala.collection.mutable.HashMap[String, DatabaseDesc]
 
   private def partitionExists(db: String, table: String, spec: TablePartitionSpec): Boolean = {
@@ -98,23 +101,29 @@ class InMemoryCatalog(
   // Databases
   // --------------------------------------------------------------------------
 
+  /**
+    * 可以看到CreateDatabaseComman.run()方法
+    * @param dbDefinition
+    * @param ignoreIfExists 如果数据库已经存在，是否忽略
+    */
   override def createDatabase(
       dbDefinition: CatalogDatabase,
       ignoreIfExists: Boolean): Unit = synchronized {
-    if (catalog.contains(dbDefinition.name)) {
-      if (!ignoreIfExists) {
+    if (catalog.contains(dbDefinition.name)) { // 数据库已经存在，则抛出异常
+      if (!ignoreIfExists) { // 抛出异常
         throw new DatabaseAlreadyExistsException(dbDefinition.name)
       }
     } else {
       try {
         val location = new Path(dbDefinition.locationUri)
         val fs = location.getFileSystem(hadoopConfig)
-        fs.mkdirs(location)
+        fs.mkdirs(location) // 创建数据库对应的数据目录
       } catch {
         case e: IOException =>
           throw new SparkException(s"Unable to create database ${dbDefinition.name} as failed " +
             s"to create its directory ${dbDefinition.locationUri}", e)
       }
+      // 保存数据库元数据信息
       catalog.put(dbDefinition.name, new DatabaseDesc(dbDefinition))
     }
   }

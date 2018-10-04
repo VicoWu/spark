@@ -59,9 +59,10 @@ case class CreateDatabaseCommand(
     props: Map[String, String])
   extends RunnableCommand {
 
+  // 所有的RunnableCommand都会调用run方法
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
-    catalog.createDatabase(
+    catalog.createDatabase( // 调用对应的catalog的createDatabase方法
       CatalogDatabase(
         databaseName,
         comment.getOrElse(""),

@@ -44,6 +44,8 @@ private[hive] class HiveSessionState(sparkSession: SparkSession)
    */
   override lazy val catalog = {
     new HiveSessionCatalog(
+      // 由于是HiveSessionState, 这里的spark.sql.catalogImplementation肯定是hive，
+      // 因此可以进行强制转换为HiveExternalCatalog
       sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog],
       sparkSession.sharedState.globalTempViewManager,
       sparkSession,

@@ -274,7 +274,7 @@ private[spark] object HiveUtils extends Logging {
     val hiveMetastoreBarrierPrefixes = HiveUtils.hiveMetastoreBarrierPrefixes(sqlConf)
     val metaVersion = IsolatedClientLoader.hiveVersion(hiveMetastoreVersion)
 
-    val isolatedLoader = if (hiveMetastoreJars == "builtin") {
+    val isolatedLoader = if (hiveMetastoreJars == "builtin") { // 使用内置的jar包
       if (hiveExecutionVersion != hiveMetastoreVersion) {
         throw new IllegalArgumentException(
           "Builtin jars can only be used when hive execution version == hive metastore version. " +
@@ -303,7 +303,7 @@ private[spark] object HiveUtils extends Logging {
       logInfo(
         s"Initializing HiveMetastoreConnection version $hiveMetastoreVersion using Spark classes.")
       new IsolatedClientLoader(
-        version = metaVersion,
+        version = metaVersion, // 使用metaVersion 作为版本号
         sparkConf = conf,
         hadoopConf = hadoopConf,
         execJars = jars.toSeq,
@@ -311,12 +311,12 @@ private[spark] object HiveUtils extends Logging {
         isolationOn = true,
         barrierPrefixes = hiveMetastoreBarrierPrefixes,
         sharedPrefixes = hiveMetastoreSharedPrefixes)
-    } else if (hiveMetastoreJars == "maven") {
+    } else if (hiveMetastoreJars == "maven") { // 使用maven来倒入用户设置的version
       // TODO: Support for loading the jars from an already downloaded location.
       logInfo(
         s"Initializing HiveMetastoreConnection version $hiveMetastoreVersion using maven.")
       IsolatedClientLoader.forVersion(
-        hiveMetastoreVersion = hiveMetastoreVersion,
+        hiveMetastoreVersion = hiveMetastoreVersion, // 使用hiveMetastoreVersion 作为版本号
         hadoopVersion = VersionInfo.getVersion,
         sparkConf = conf,
         hadoopConf = hadoopConf,
