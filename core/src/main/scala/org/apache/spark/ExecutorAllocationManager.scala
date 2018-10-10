@@ -77,6 +77,7 @@ import org.apache.spark.util.{Clock, SystemClock, ThreadUtils, Utils}
  *
  *   spark.dynamicAllocation.executorIdleTimeout (K) -
  *     If an executor has been idle for this duration, remove it
+  *     这个类会负责executor的动态分配
  */
 private[spark] class ExecutorAllocationManager(
     client: ExecutorAllocationClient,
@@ -102,7 +103,7 @@ private[spark] class ExecutorAllocationManager(
     "spark.dynamicAllocation.sustainedSchedulerBacklogTimeout", s"${schedulerBacklogTimeoutS}s")
 
   // How long an executor must be idle for before it is removed (seconds)
-  private val executorIdleTimeoutS = conf.getTimeAsSeconds(
+  private val executorIdleTimeoutS = conf.getTimeAsSeconds( // 空闲的executor的超时时间
     "spark.dynamicAllocation.executorIdleTimeout", "60s")
 
   private val cachedExecutorIdleTimeoutS = conf.getTimeAsSeconds(
@@ -281,6 +282,7 @@ private[spark] class ExecutorAllocationManager(
     updateAndSyncNumExecutorsTarget(now)
 
     val executorIdsToBeRemoved = ArrayBuffer[String]()
+    // 开始判断是否超过了超时时间
     removeTimes.retain { case (executorId, expireTime) =>
       val expired = now >= expireTime
       if (expired) {
@@ -403,6 +405,7 @@ private[spark] class ExecutorAllocationManager(
   private def removeExecutors(executors: Seq[String]): Seq[String] = synchronized {
     val executorIdsToBeRemoved = new ArrayBuffer[String]
 
+    // 这里打印executor的id
     logInfo("Request to remove executorIds: " + executors.mkString(", "))
     val numExistingExecutors = allocationManager.executorIds.size - executorsPendingToRemove.size
 
@@ -556,6 +559,8 @@ private[spark] class ExecutorAllocationManager(
           }
         }
         val realTimeout = if (timeout <= 0) Long.MaxValue else timeout // overflow
+        // 将这个executor 记录在removeTimes的这个map中，开始对这个executor进行超时监控
+        // 如果executor空闲超过指定时间，在方法removeExecutors中被删除
         removeTimes(executorId) = realTimeout
         logDebug(s"Starting idle timer for $executorId because there are no more tasks " +
           s"scheduled to run on the executor (to expire in ${(realTimeout - now)/1000} seconds)")

@@ -57,7 +57,7 @@ private[hive] object IsolatedClientLoader extends Logging {
     val files = if (resolvedVersions.contains((resolvedVersion, hadoopVersion))) {
       resolvedVersions((resolvedVersion, hadoopVersion))
     } else {
-      val (downloadedFiles, actualHadoopVersion) =
+      val (downloadedFiles, actualHadoopVersion) = // 下载对应版本的hive
         try {
           (downloadVersion(resolvedVersion, hadoopVersion, ivyPath), hadoopVersion)
         } catch {
@@ -75,6 +75,7 @@ private[hive] object IsolatedClientLoader extends Logging {
             sharesHadoopClasses = false
             (downloadVersion(resolvedVersion, "2.4.0", ivyPath), "2.4.0")
         }
+      // 将对应版本的hive依赖保存起来，这样可以下次直接使用
       resolvedVersions.put((resolvedVersion, actualHadoopVersion), downloadedFiles)
       resolvedVersions((resolvedVersion, actualHadoopVersion))
     }
@@ -90,6 +91,11 @@ private[hive] object IsolatedClientLoader extends Logging {
       barrierPrefixes = barrierPrefixes)
   }
 
+  /**
+    * 将用户制定的meta版本，聚合对应到某一个版本，因为有些小版本之间的差异可以忽略
+    * @param version
+    * @return
+    */
   def hiveVersion(version: String): HiveVersion = version match {
     case "12" | "0.12" | "0.12.0" => hive.v12
     case "13" | "0.13" | "0.13.0" | "0.13.1" => hive.v13
@@ -202,10 +208,12 @@ private[hive] class IsolatedClientLoader(
    * instead of stacking a new URLClassLoader on top of it.
    */
   private[hive] val classLoader: MutableURLClassLoader = {
+
     val isolatedClassLoader =
       if (isolationOn) {
         new URLClassLoader(allJars, rootClassLoader) {
           override def loadClass(name: String, resolve: Boolean): Class[_] = {
+            // 判断当前这个classLoader对象是否已经加载了这个class对象，如果已经加载了，则直接返回
             val loaded = findLoadedClass(name)
             if (loaded == null) doLoadClass(name, resolve) else loaded
           }
@@ -224,7 +232,7 @@ private[hive] class IsolatedClientLoader(
               // class is not found.
               logDebug(s"shared class: $name")
               try {
-                baseClassLoader.loadClass(name)
+                baseClassLoader.loadClass(name) // 如果是shared class，没必要使用新的classloader， 直接使用当前的Context classloader来加载
               } catch {
                 case _: ClassNotFoundException =>
                   super.loadClass(name, resolve)
@@ -249,15 +257,18 @@ private[hive] class IsolatedClientLoader(
 
   /** The isolated client interface to Hive. */
   private[hive] def createClient(): HiveClient = {
-    if (!isolationOn) {
+    if (!isolationOn) { // 是否需要隔离，如果不需要，则直接创建对象，即使用默认的Classloader来加载class
       return new HiveClientImpl(version, sparkConf, hadoopConf, config, baseClassLoader, this)
     }
+
     // Pre-reflective instantiation setup.
     logDebug("Initializing the logger to avoid disaster...")
     val origLoader = Thread.currentThread().getContextClassLoader
     Thread.currentThread.setContextClassLoader(classLoader)
 
+    // 如果有类隔离需求，则需要使用独立的classloader来初始化类和对象
     try {
+      // 传入version,创建HiveClientImpl对象，HiveClientImpl中封装了不同版本的client的具体实现
       classLoader
         .loadClass(classOf[HiveClientImpl].getName)
         .getConstructors.head

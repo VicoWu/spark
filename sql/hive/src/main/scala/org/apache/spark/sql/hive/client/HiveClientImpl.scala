@@ -88,6 +88,7 @@ private[hive] class HiveClientImpl(
   // Circular buffer to hold what hive prints to STDOUT and ERR.  Only printed when failures occur.
   private val outputBuffer = new CircularBuffer()
 
+  // 根据传入的版本号，选择使用那个版本的Shim implement
   private val shim = version match {
     case hive.v12 => new Shim_v0_12()
     case hive.v13 => new Shim_v0_13()

@@ -111,7 +111,7 @@ private[spark] object HiveUtils extends Logging {
     .stringConf
     .toSequence
     .createWithDefault(jdbcPrefixes)
-
+  Shim_v1_2
   private def jdbcPrefixes = Seq(
     "com.mysql.jdbc", "org.postgresql", "com.microsoft.sqlserver", "oracle.jdbc")
 
@@ -302,7 +302,7 @@ private[spark] object HiveUtils extends Logging {
 
       logInfo(
         s"Initializing HiveMetastoreConnection version $hiveMetastoreVersion using Spark classes.")
-      new IsolatedClientLoader(
+      new IsolatedClientLoader( // 直接创建对应版本的IsolatedClientLoader对象，代表当前bult-in版本的loader
         version = metaVersion, // 使用metaVersion 作为版本号
         sparkConf = conf,
         hadoopConf = hadoopConf,
@@ -315,7 +315,7 @@ private[spark] object HiveUtils extends Logging {
       // TODO: Support for loading the jars from an already downloaded location.
       logInfo(
         s"Initializing HiveMetastoreConnection version $hiveMetastoreVersion using maven.")
-      IsolatedClientLoader.forVersion(
+      IsolatedClientLoader.forVersion( // 创建对应版本的IsolatedClientLoader对象
         hiveMetastoreVersion = hiveMetastoreVersion, // 使用hiveMetastoreVersion 作为版本号
         hadoopVersion = VersionInfo.getVersion,
         sparkConf = conf,
@@ -323,7 +323,7 @@ private[spark] object HiveUtils extends Logging {
         config = configurations,
         barrierPrefixes = hiveMetastoreBarrierPrefixes,
         sharedPrefixes = hiveMetastoreSharedPrefixes)
-    } else {
+    } else { // 既不是built-in,也不是maven, hiveMetastorejars中存放的直接是jar包的路径
       // Convert to files and expand any directories.
       val jars =
         hiveMetastoreJars
