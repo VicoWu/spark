@@ -148,6 +148,7 @@ class StorageLevel private(
 /**
  * Various [[org.apache.spark.storage.StorageLevel]] defined and utility functions for creating
  * new storage levels.
+  * 创建了不同的静态对象
  */
 object StorageLevel {
   val NONE = new StorageLevel(false, false, false, false)

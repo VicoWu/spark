@@ -50,7 +50,7 @@ import org.apache.spark.util.io.ChunkedByteBuffer
 
 
 /* Class for returning a fetched block and associated metrics. */
-private[spark] class BlockResult(
+private[spark] class BlockResult( // 用来封装BlockManager从本地获取到的Block信息以及相关的度量
     val data: Iterator[Any],
     val readMethod: DataReadMethod.Value,
     val bytes: Long)
@@ -66,7 +66,7 @@ private[spark] class BlockManager(
     rpcEnv: RpcEnv,
     val master: BlockManagerMaster,
     val serializerManager: SerializerManager,
-    val conf: SparkConf,
+    val conf: SparkConf,Shim_v1_2
     memoryManager: MemoryManager,
     mapOutputTracker: MapOutputTracker,
     shuffleManager: ShuffleManager,
@@ -86,7 +86,7 @@ private[spark] class BlockManager(
   }
 
   // Visible for testing
-  private[storage] val blockInfoManager = new BlockInfoManager
+  private[storage] val blockInfoManager = new BlockInfoManager //主要帮助BlockManager进行锁管理
 
   private val futureExecutionContext = ExecutionContext.fromExecutorService(
     ThreadUtils.newDaemonCachedThreadPool("block-manager-future", 128))
