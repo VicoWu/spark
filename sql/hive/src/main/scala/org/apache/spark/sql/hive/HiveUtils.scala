@@ -243,7 +243,7 @@ private[spark] object HiveUtils extends Logging {
       sparkConf = conf,
       execJars = Seq(),
       hadoopConf = hadoopConf,
-      config = newTemporaryConfiguration(useInMemoryDerby = true),
+      config = newTemporaryConfiguration(useInMemoryDerby = true), // 使用基于内存的derby数据库作为元数据库
       isolationOn = false,
       baseClassLoader = Utils.getContextOrSparkClassLoader)
     loader.createClient().asInstanceOf[HiveClientImpl]
